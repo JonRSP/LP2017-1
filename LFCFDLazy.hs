@@ -1,10 +1,10 @@
--- | A linguagem LFCFD suporta tanto 
--- expressoes identificadas (LET) quanto 
+-- | A linguagem LFCFD suporta tanto
+-- expressoes identificadas (LET) quanto
 -- identificadores e funcoes de alta ordem
 -- (com o mecanismo de expressoes lambda).
--- As substituicoes sao postergadas. 
+-- As substituicoes sao postergadas.
 
-module LFCFDLazy where 
+module LFCFDLazy where
 
 type Id = String
 
@@ -16,7 +16,7 @@ type Id = String
 -- ou uma expressao lambda.
 
 type Env = [(Id, ValorE)]
- 
+
 -- Nessa versao da linguagem, o interpretador precisa
 -- retornar valores de um tipo especial, ValorE, que
 -- podem ser ou um valor inteiro (VInt Int) ou um
@@ -28,33 +28,33 @@ type Env = [(Id, ValorE)]
 -- closure Closure y (x + y) [(x,5)]
 
 
-data ValorE = VInt Int                
+data ValorE = VInt Int
             | FClosure Id Expressao Env
             | EClosure Expressao Env
  deriving(Show, Eq)
 
 data Expressao = Valor Int
                | Soma Expressao Expressao
-               | Subtracao Expressao Expressao 
+               | Subtracao Expressao Expressao
                | Multiplicacao Expressao Expressao
-               | Divisao Expressao Expressao 
-               | Let Id Expressao Expressao       
+               | Divisao Expressao Expressao
+               | Let Id Expressao Expressao
                | Ref Id
                | Lambda Id Expressao
-               | Aplicacao Expressao Expressao   
+               | Aplicacao Expressao Expressao
  deriving(Show, Eq)
 
 -- | O interpretador da linguagem LFCFD
 -- (funcao 'avaliar') precisa ser ajustado, uma vez que
 -- o tipo de retorno nao pode ser simplesmente
 -- um inteiro ou uma expressao. Com substituicoes postergadas,
--- nessa linguagem o retorno precisa ser um ValorE, conforme 
--- discutido anteriormente. 
+-- nessa linguagem o retorno precisa ser um ValorE, conforme
+-- discutido anteriormente.
 
 avaliar :: Expressao -> Env -> ValorE
 avaliar (Valor n)            _ = VInt n
 avaliar (Soma e d)          env = avaliarExpBin e d (+) env
-avaliar (Subtracao e d)     env = avaliarExpBin e d (-) env 
+avaliar (Subtracao e d)     env = avaliarExpBin e d (-) env
 avaliar (Multiplicacao e d) env = avaliarExpBin e d (*) env
 avaliar (Divisao e d)       env = avaliarExpBin e d div env
 avaliar (Let v e c)         env = avaliar (Aplicacao (Lambda v c) e) env
@@ -64,27 +64,30 @@ avaliar (Aplicacao e1 e2)   env =
   let
     v = avaliacaoStrict (avaliar e1 env)
     e = EClosure e2 env
-  in case v of
+  in case v of --if v = (FC a c env')
      (FClosure a c env') -> avaliar c ((a, e):env')
      otherwise -> error "Tentando aplicar uma expressao que nao eh uma funcao anonima"
-    
 
-avaliacaoStrict :: ValorE -> ValorE     
-avaliacaoStrict (EClosure e env) = avaliacaoStrict (avaliar e env)
-avaliacaoStrict e = e
+
+avaliacaoStrict :: ValorE -> ValorE
+avaliacaoStrict (EClosure e env) = avaliacaoStrict (avaliar e env) --caso seja EClosure
+avaliacaoStrict e = e --Caso seja ValorE ou Fclosure
 
 
 -- | Realiza uma pesquisa por uma determinada
--- variaval no ambiente de substituicoes postergadas. 
+-- variaval no ambiente de substituicoes postergadas.
 pesquisar :: Id -> Env -> ValorE
 pesquisar v [] = error "Variavel nao declarada."
 pesquisar v ((i,e):xs)
  | v == i = e
  | otherwise = pesquisar v xs
-  
+
 -- | Avalia uma expressao binaria.
 avaliarExpBin :: Expressao -> Expressao -> (Int -> Int -> Int) -> Env -> ValorE
 avaliarExpBin e d op env = VInt (op ve vd)
  where
-  (VInt ve) = avaliar e env 
-  (VInt vd) = avaliar d env
+  (VInt ve)  = avaliacaoStrict (avaliar e env)
+  (VInt vd) = avaliacaoStrict (avaliar d env)
+                                --TODO:Aqui pode ser que retorne um EClosure (Valor v) env
+  -- É esperado que ele retorne apenas um VInt. Precisa então fazer com que ele retorne
+  -- apenas o Valor da Closure
