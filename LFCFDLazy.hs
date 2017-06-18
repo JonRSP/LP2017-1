@@ -79,7 +79,7 @@ avaliacaoStrict e = e --Caso seja ValorE ou Fclosure
 pesquisar :: Id -> Env -> ValorE
 pesquisar v [] = error "Variavel nao declarada."
 pesquisar v ((i,e):xs)
- | v == i = e
+ | v == i = avaliacaoStrict (e) --Mudança aqui: v == i = e
  | otherwise = pesquisar v xs
 
 -- | Avalia uma expressao binaria.

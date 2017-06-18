@@ -47,12 +47,12 @@ teste9 = TestCase (assertEqual "avaliar let x=4-1 in let y=x*x in y" (VInt 9) (a
 todosOsTestes = TestList [ teste1
                          , teste2
                          , teste3
-                         --, teste4
-                         --, teste5
+                         , teste4
+                         , teste5
                          , teste6
                          , teste7
-                         --, teste8
-                         --, teste9
+                         , teste8
+                         , teste9
                          ]
 
 executarTestes = runTestTT todosOsTestes
