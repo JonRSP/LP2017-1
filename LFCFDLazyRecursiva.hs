@@ -4,7 +4,7 @@
 -- (com o mecanismo de expressoes lambda).
 -- As substituicoes sao postergadas.
 
-module LFCFDLazy where
+module LFCFDLazyRecursiva where
 
 type Id = String
 
@@ -42,7 +42,8 @@ data Expressao = Valor Int
                | Ref Id
                | Lambda Id Expressao
                | Aplicacao Expressao Expressao
-               | Recursao Expressao Expressao Expressao
+               | Recursao Id Expressao Expressao
+               | IF0 Expressao Expressao Expressao
  deriving(Show, Eq)
 
 -- | O interpretador da linguagem LFCFD
@@ -61,6 +62,9 @@ avaliar (Divisao e d)       env = avaliarExpBin e d div env
 avaliar (Let v e c)         env = avaliar (Aplicacao (Lambda v c) e) env
 avaliar (Ref v)             env = pesquisar v env
 avaliar (Lambda a c)        env = FClosure a c env
+
+
+
 avaliar (Aplicacao e1 e2)   env =
   let
     v = avaliacaoStrict (avaliar e1 env)
@@ -68,9 +72,19 @@ avaliar (Aplicacao e1 e2)   env =
   in case v of --if v = (FC a c env')
      (FClosure a c env') -> avaliar c ((a, e):env')
      otherwise -> error "Tentando aplicar uma expressao que nao eh uma funcao anonima"
-avaliar (Recursao corpo valor condicao) env 
-    | condicao == 0 = avaliar ( Aplicacao (corpo) (valor)) env
-    | otherwise = avaliar (Recursao (corpo) ( avaliar(Aplicacao (corpo)(valor)) env) (condicao-1)) env
+
+avaliar (Recursao identificador valor corpo) env =
+  let
+    v = avaliacaoStrict (avaliar valor env)
+    e = EClosure corpo env
+    newEnv = (lookupApp identificador v env)++env
+  in case v of
+    (FClosure a c env') -> avaliar c ((a,e):newEnv)
+    otherwise -> error "Tentando aplicar uma expressao que nao eh uma funcao anonima"
+
+avaliar (IF0 condicao t e) env 
+   | avaliar condicao env == VInt 0 = avaliar t env
+   | otherwise = avaliar e env
 
 avaliacaoStrict :: ValorE -> ValorE
 avaliacaoStrict (EClosure e env) = avaliacaoStrict (avaliar e env) --caso seja EClosure
@@ -84,6 +98,12 @@ pesquisar v [] = error "Variavel nao declarada."
 pesquisar v ((i,e):xs)
  | v == i = avaliacaoStrict (e) --Mudança aqui: v == i = e
  | otherwise = pesquisar v xs
+
+lookupApp :: Id -> ValorE -> Env -> Env
+lookupApp identificador valor [] = [(identificador, valor)]
+lookupApp identificador valor ((i,e):xs)
+ | identificador == i = []
+ | otherwise = lookupApp identificador valor xs
 
 -- | Avalia uma expressao binaria.
 avaliarExpBin :: Expressao -> Expressao -> (Int -> Int -> Int) -> Env -> ValorE
