@@ -1,0 +1,556 @@
+\documentclass[12pt]{article}
+
+%% ODER: format ==         = "\mathrel{==}"
+%% ODER: format /=         = "\neq "
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+
+
+\newcommand{\Conid}[1]{\mathit{#1}}
+\newcommand{\Varid}[1]{\mathit{#1}}
+\newcommand{\anonymous}{\kern0.06em \vbox{\hrule\@width.5em}}
+\newcommand{\plus}{\mathbin{+\!\!\!+}}
+\newcommand{\bind}{\mathbin{>\!\!\!>\mkern-6.7mu=}}
+\newcommand{\rbind}{\mathbin{=\mkern-6.7mu<\!\!\!<}}% suggested by Neil Mitchell
+\newcommand{\sequ}{\mathbin{>\!\!\!>}}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\usepackage{polytable}
+
+%mathindent has to be defined
+\@ifundefined{mathindent}%
+  {\newdimen\mathindent\mathindent\leftmargini}%
+  {}%
+
+\def\resethooks{%
+  \global\let\SaveRestoreHook\empty
+  \global\let\ColumnHook\empty}
+\newcommand*{\savecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\savecolumns[#1]}}
+\newcommand*{\restorecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\restorecolumns[#1]}}
+\newcommand*{\aligncolumn}[2]%
+  {\g@addto@macro\ColumnHook{\column{#1}{#2}}}
+
+\resethooks
+
+\newcommand{\onelinecommentchars}{\quad-{}- }
+\newcommand{\commentbeginchars}{\enskip\{-}
+\newcommand{\commentendchars}{-\}\enskip}
+
+\newcommand{\visiblecomments}{%
+  \let\onelinecomment=\onelinecommentchars
+  \let\commentbegin=\commentbeginchars
+  \let\commentend=\commentendchars}
+
+\newcommand{\invisiblecomments}{%
+  \let\onelinecomment=\empty
+  \let\commentbegin=\empty
+  \let\commentend=\empty}
+
+\visiblecomments
+
+\newlength{\blanklineskip}
+\setlength{\blanklineskip}{0.66084ex}
+
+\newcommand{\hsindent}[1]{\quad}% default is fixed indentation
+\let\hspre\empty
+\let\hspost\empty
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+%
+%
+%
+%
+%
+% This package provides two environments suitable to take the place
+% of hscode, called "plainhscode" and "arrayhscode". 
+%
+% The plain environment surrounds each code block by vertical space,
+% and it uses \abovedisplayskip and \belowdisplayskip to get spacing
+% similar to formulas. Note that if these dimensions are changed,
+% the spacing around displayed math formulas changes as well.
+% All code is indented using \leftskip.
+%
+% Changed 19.08.2004 to reflect changes in colorcode. Should work with
+% CodeGroup.sty.
+%
+\ReadOnlyOnce{polycode.fmt}%
+\makeatletter
+
+\newcommand{\hsnewpar}[1]%
+  {{\parskip=0pt\parindent=0pt\par\vskip #1\noindent}}
+
+% can be used, for instance, to redefine the code size, by setting the
+% command to \small or something alike
+\newcommand{\hscodestyle}{}
+
+% The command \sethscode can be used to switch the code formatting
+% behaviour by mapping the hscode environment in the subst directive
+% to a new LaTeX environment.
+
+\newcommand{\sethscode}[1]%
+  {\expandafter\let\expandafter\hscode\csname #1\endcsname
+   \expandafter\let\expandafter\endhscode\csname end#1\endcsname}
+
+% "compatibility" mode restores the non-polycode.fmt layout.
+
+\newenvironment{compathscode}%
+  {\par\noindent
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed\)%
+   \par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\compaths}{\sethscode{compathscode}}
+
+% "plain" mode is the proposed default.
+% It should now work with \centering.
+% This required some changes. The old version
+% is still available for reference as oldplainhscode.
+
+\newenvironment{plainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newenvironment{oldplainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+% Here, we make plainhscode the default environment.
+
+\newcommand{\plainhs}{\sethscode{plainhscode}}
+\newcommand{\oldplainhs}{\sethscode{oldplainhscode}}
+\plainhs
+
+% The arrayhscode is like plain, but makes use of polytable's
+% parray environment which disallows page breaks in code blocks.
+
+\newenvironment{arrayhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\parray}%
+  {\endparray\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newcommand{\arrayhs}{\sethscode{arrayhscode}}
+
+% The mathhscode environment also makes use of polytable's parray 
+% environment. It is supposed to be used only inside math mode 
+% (I used it to typeset the type rules in my thesis).
+
+\newenvironment{mathhscode}%
+  {\parray}{\endparray}
+
+\newcommand{\mathhs}{\sethscode{mathhscode}}
+
+% texths is similar to mathhs, but works in text mode.
+
+\newenvironment{texthscode}%
+  {\(\parray}{\endparray\)}
+
+\newcommand{\texths}{\sethscode{texthscode}}
+
+% The framed environment places code in a framed box.
+
+\def\codeframewidth{\arrayrulewidth}
+\RequirePackage{calc}
+
+\newenvironment{framedhscode}%
+  {\parskip=\abovedisplayskip\par\noindent
+   \hscodestyle
+   \arrayrulewidth=\codeframewidth
+   \tabular{@{}|p{\linewidth-2\arraycolsep-2\arrayrulewidth-2pt}|@{}}%
+   \hline\framedhslinecorrect\\{-1.5ex}%
+   \let\endoflinesave=\\
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \framedhslinecorrect\endoflinesave{.5ex}\hline
+   \endtabular
+   \parskip=\belowdisplayskip\par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\framedhslinecorrect}[2]%
+  {#1[#2]}
+
+\newcommand{\framedhs}{\sethscode{framedhscode}}
+
+% The inlinehscode environment is an experimental environment
+% that can be used to typeset displayed code inline.
+
+\newenvironment{inlinehscode}%
+  {\(\def\column##1##2{}%
+   \let\>\undefined\let\<\undefined\let\\\undefined
+   \newcommand\>[1][]{}\newcommand\<[1][]{}\newcommand\\[1][]{}%
+   \def\fromto##1##2##3{##3}%
+   \def\nextline{}}{\) }%
+
+\newcommand{\inlinehs}{\sethscode{inlinehscode}}
+
+% The joincode environment is a separate environment that
+% can be used to surround and thereby connect multiple code
+% blocks.
+
+\newenvironment{joincode}%
+  {\let\orighscode=\hscode
+   \let\origendhscode=\endhscode
+   \def\endhscode{\def\hscode{\endgroup\def\@currenvir{hscode}\\}\begingroup}
+   %\let\SaveRestoreHook=\empty
+   %\let\ColumnHook=\empty
+   %\let\resethooks=\empty
+   \orighscode\def\hscode{\endgroup\def\@currenvir{hscode}}}%
+  {\origendhscode
+   \global\let\hscode=\orighscode
+   \global\let\endhscode=\origendhscode}%
+
+\makeatother
+\EndFmtInput
+%
+
+\usepackage{busproofs}
+\usepackage[brazil]{babel}
+
+\title{Implementa\c c\~{a}o de Lazy Evaluation e Recurs\~ao em Haskell}
+
+\author{H\'elio Santana da Silva J\'unior - 140142959 \\ J\^onatas Ribeiro Senna Pires - 140090983}
+
+
+\begin{document}
+
+\maketitle
+
+\section{Introdu\c c\~{a}o}
+
+Este documento apresenta uma implementa\c c\~{a}o, em \emph{literate Haskell}, de uma linguagem de programa\c c\~{a}o funcional minimalista utilizando a estrat\'egia de avali\c c\~{a}o lazy evaluation (sharing), que posterga as avalia\c c\~{o}es de express\~oes at\'e que elas sejam necess\'arias. O documento tamb\'em apresenta uma nova vers\~ao desta linguagem com suporte a recurss\~ao.
+
+\section{Vis\~{a}o geral da linguagem}
+
+
+A linguagem LFCFD suporta tanto express\~{o}es
+identificadas (LET) quanto identificadores e fun\c c\~{o}es de alta ordem
+(com o mecanismo de express\~oes lambda) al\'em de express\~oes recursivas e um condicional simples. A linguagem tamb\'em possui suporte para escopo est\'atico.
+
+\section{Defini\c c\~{a}o da \'{A}rvore Sint\'{a}tica Abstrata}
+
+A implementa\c c\~ao se baseia na defini\c c\~ao de um m\'odulo Haskell e alguns tipos auxiliares, como \texttt{Id} (um tipo sinomimo para uma string) e Env, que corresponde a um ambiente de valores, onde um valor pode ser um valor inteiro ou uma express\~ao lambda.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{module}\;\Conid{LFCFDLazy}\;\mathbf{where}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{type}\;\Conid{Id}\mathrel{=}\Conid{String}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{type}\;\Conid{Env}\mathrel{=}[\mskip1.5mu (\Conid{Id},\Conid{ValorE})\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Existem duas defini\c c\~oes de tipos, \texttt{ValorE} e \texttt{Expressao}, onde o \texttt{ValorE} pode ser definido como um valor inteiro, um identificador com uma express\~ao (lambda) ou uma express\~ao simples. As express\~ao s\~ao definidas como um valor inteiro, express\~oes bin\'arias (soma, subtra\c c\~ao, multiplica\c c\~ao e divis\~ao), express\~oes \texttt{Let}, aplica\c c\~oes de fun\c c\~oes, recurs\~ao e \texttt{IF0}.
+
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{13}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;\Conid{ValorE}\mathrel{=}\Conid{VInt}\;\Conid{Int}{}\<[E]%
+\\
+\>[B]{}\hsindent{13}{}\<[13]%
+\>[13]{}\mid \Conid{FClosure}\;\Conid{Id}\;\Conid{Expressao}\;\Conid{Env}{}\<[E]%
+\\
+\>[B]{}\hsindent{13}{}\<[13]%
+\>[13]{}\mid \Conid{EClosure}\;\Conid{Expressao}\;\Conid{Env}{}\<[E]%
+\\
+\>[B]{}\mathbf{deriving}\;(\Conid{Show},\Conid{Eq}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{data}\;\Conid{Expressao}\mathrel{=}\Conid{Valor}\;\Conid{Int}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Soma}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Subtracao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Multiplicacao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Divisao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Let}\;\Conid{Id}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Ref}\;\Conid{Id}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Lambda}\;\Conid{Id}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Aplicacao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Recursao}\;\Conid{Id}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{IF0}\;\Conid{Expressao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\mathbf{deriving}\;(\Conid{Show},\Conid{Eq}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+A fun\c c\~ao que avalia as express\~oes recebe uma express\~ao e um ambiente e retorna um valorE. A avalia\c c\~ao de express\~oes necessita retornar uma closure, levando em conta que a linguagem esta utlizando substitui\c c\~oes postergadas. O closure mapeia cada vari\'avel livre da fun\c c\~ao dentro do contexto da pr\'opria fun\c c\~ao.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{avaliar}\mathbin{::}\Conid{Expressao}\to \Conid{Env}\to \Conid{ValorE}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Para o caso de um valor inteiro a avial\c c\~ao \'e trivial, o retorno \'e um VInt, definido pelo \texttt{ValorE}. No caso de uma refer\^encia, e utilizado a fun\c c\~ao pesquisar, que realiza uma pesquisa da vari\'avel de refer\^encia dentro do ambiente. A fun\c c\~ao pesquisar assim como as demais fun\c c\~oes utilizadas dentro da fun\c c\~ao avaliar ser\~ao explicadas posteriormente neste documento.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{29}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{30}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{avaliar}\;(\Conid{Valor}\;\Varid{n})\;{}\<[30]%
+\>[30]{}\anonymous \mathrel{=}\Conid{VInt}\;\Varid{n}{}\<[E]%
+\\
+\>[B]{}\Varid{avaliar}\;(\Conid{Ref}\;\Varid{v})\;{}\<[29]%
+\>[29]{}\Varid{env}\mathrel{=}\Varid{pesquisar}\;\Varid{v}\;\Varid{env}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Em rela\c c\~ao aos casos de express\~oes bin\'arias a avali\c c\~ao e muito semelhante em todos os casos. \'E usada a fun\c c\~ao \texttt{avaliarExpBin} que recebe duas express\~oes, um operador e o ambiente.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{29}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{avaliar}\;(\Conid{Soma}\;\Varid{e}\;\Varid{d})\;{}\<[29]%
+\>[29]{}\Varid{env}\mathrel{=}\Varid{avaliarExpBin}\;\Varid{e}\;\Varid{d}\;(\mathbin{+})\;\Varid{env}{}\<[E]%
+\\
+\>[B]{}\Varid{avaliar}\;(\Conid{Subtracao}\;\Varid{e}\;\Varid{d})\;{}\<[29]%
+\>[29]{}\Varid{env}\mathrel{=}\Varid{avaliarExpBin}\;\Varid{e}\;\Varid{d}\;(\mathbin{-})\;\Varid{env}{}\<[E]%
+\\
+\>[B]{}\Varid{avaliar}\;(\Conid{Multiplicacao}\;\Varid{e}\;\Varid{d})\;\Varid{env}\mathrel{=}\Varid{avaliarExpBin}\;\Varid{e}\;\Varid{d}\;(\mathbin{*})\;\Varid{env}{}\<[E]%
+\\
+\>[B]{}\Varid{avaliar}\;(\Conid{Divisao}\;\Varid{e}\;\Varid{d})\;{}\<[29]%
+\>[29]{}\Varid{env}\mathrel{=}\Varid{avaliarExpBin}\;\Varid{e}\;\Varid{d}\;\Varid{div}\;\Varid{env}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+A avali\c c\~ao de uma expressao \texttt{Let} \'e traduzida como uma aplica\c c\~ao lambda. A express\~ao lambda e convertida em uma closure com uma vari\'avel e uma express\~ao.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{29}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{avaliar}\;(\Conid{Let}\;\Varid{v}\;\Varid{e}\;\Varid{c})\;{}\<[29]%
+\>[29]{}\Varid{env}\mathrel{=}\Varid{avaliar}\;(\Conid{Aplicacao}\;(\Conid{Lambda}\;\Varid{v}\;\Varid{c})\;\Varid{e})\;\Varid{env}{}\<[E]%
+\\
+\>[B]{}\Varid{avaliar}\;(\Conid{Lambda}\;\Varid{a}\;\Varid{c})\;{}\<[29]%
+\>[29]{}\Varid{env}\mathrel{=}\Conid{FClosure}\;\Varid{a}\;\Varid{c}\;\Varid{env}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+O caso de uma aplica\c c\~ao \'e o primeiro caso mais complexo da avalia\c c\~ao. Primeiramente \'e realizada uma avalia\c c\~ao diferente no primeiro argumento da aplica\c c\~ao, onde se espera retornar um \texttt{valorE}. Essa avali\c c\~ao foi chamada de \texttt{avaliacaoStrict}, que ser\'a aprofundada neste documento. Em seguida o segundo argumento e passado como uma closure de apenas uma express\~ao e ambiente. Caso a \texttt{avaliacaoStrict} retorne uma \texttt{FClosure}, e retornado uma avali\c c\~ao do corpo da closure passando o \texttt{Id} e a \texttt{Eclosure} dentro do ambiente, caso contrario \'e retornado um erro de aplica\c c\~ao de fun\c c\~ao.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{6}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{29}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{avaliar}\;(\Conid{Aplicacao}\;\Varid{e1}\;\Varid{e2})\;{}\<[29]%
+\>[29]{}\Varid{env}\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathbf{let}{}\<[E]%
+\\
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}\Varid{v}\mathrel{=}\Varid{avaliacaoStrict}\;(\Varid{avaliar}\;\Varid{e1}\;\Varid{env}){}\<[E]%
+\\
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}\Varid{e}\mathrel{=}\Conid{EClosure}\;\Varid{e2}\;\Varid{env}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathbf{in}\;\mathbf{case}\;\Varid{v}\;\mathbf{of}\;\mbox{\onelinecomment if v = (FC a c env')}{}\<[E]%
+\\
+\>[3]{}\hsindent{3}{}\<[6]%
+\>[6]{}(\Conid{FClosure}\;\Varid{a}\;\Varid{c}\;\Varid{env'})\to \Varid{avaliar}\;\Varid{c}\;((\Varid{a},\Varid{e})\mathbin{:}\Varid{env'}){}\<[E]%
+\\
+\>[3]{}\hsindent{3}{}\<[6]%
+\>[6]{}\Varid{otherwise}\to \Varid{error}\;\text{\tt \char34 Tentando~aplicar~uma~expressao~que~nao~eh~uma~funcao~anonima\char34}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+
+O caso de uma express\~ao \texttt{IF0} \'e simples. Caso a condi\c c\~ao seja igual a zero a primeira express\~ao, t, \'e avaliada, caso contr\'ario a segunda express\~ao, \texttt{e}, \'e avaliada. Esse tipo de express\~ao \'e usada para a constru\c c\~ao de express\~oes recursivas. A expressao recursiva \'e avaliada de forma similar a uma aplica\c c\~ao de fun\c c\~ao, levando em conta sua semelhan\c ca estrutural com a expressao \texttt{Let}. A diferen\c ca \'e a atualiza\c c\~ao do ambiente, que deve ser atualizado em cada "la\c co" da recurs\~ao.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{4}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{avaliar}\;(\Conid{IF0}\;\Varid{condicao}\;\Varid{t}\;\Varid{e})\;\Varid{env}{}\<[E]%
+\\
+\>[B]{}\hsindent{4}{}\<[4]%
+\>[4]{}\mid \Varid{avaliar}\;\Varid{condicao}\;\Varid{env}\equiv \Conid{VInt}\;\mathrm{0}\mathrel{=}\Varid{avaliar}\;\Varid{t}\;\Varid{env}{}\<[E]%
+\\
+\>[B]{}\hsindent{4}{}\<[4]%
+\>[4]{}\mid \Varid{otherwise}\mathrel{=}\Varid{avaliar}\;\Varid{e}\;\Varid{env}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{avaliar}\;(\Conid{Recursao}\;\Varid{identificador}\;\Varid{valor}\;\Varid{corpo})\;\Varid{env}\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\mathbf{let}{}\<[E]%
+\\
+\>[B]{}\hsindent{4}{}\<[4]%
+\>[4]{}\Varid{v}\mathrel{=}\Varid{avaliacaoStrict}\;(\Varid{avaliar}\;\Varid{valor}\;\Varid{env}){}\<[E]%
+\\
+\>[B]{}\hsindent{4}{}\<[4]%
+\>[4]{}\Varid{e}\mathrel{=}\Conid{EClosure}\;\Varid{corpo}\;\Varid{env}{}\<[E]%
+\\
+\>[B]{}\hsindent{4}{}\<[4]%
+\>[4]{}\Varid{newEnv}\mathrel{=}(\Varid{lookupApp}\;\Varid{identificador}\;\Varid{v}\;\Varid{env})\plus \Varid{env}{}\<[E]%
+\\
+\>[B]{}\mathbf{in}\;\mathbf{case}\;\Varid{v}\;\mathbf{of}{}\<[E]%
+\\
+\>[B]{}\hsindent{4}{}\<[4]%
+\>[4]{}(\Conid{FClosure}\;\Varid{a}\;\Varid{c}\;\Varid{env'})\to \Varid{avaliar}\;\Varid{c}\;((\Varid{a},\Varid{e})\mathbin{:}\Varid{newEnv}){}\<[E]%
+\\
+\>[B]{}\hsindent{4}{}\<[4]%
+\>[4]{}\Varid{otherwise}\to \Varid{error}\;\text{\tt \char34 Tentando~aplicar~uma~expressao~que~nao~eh~uma~funcao~anonima\char34}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Em rela\c c\~ao as fun\c c\~oes auxiliares usadas na avalica\c c\~ao, a primeira a ser abodada ser\'a a fun\c c\~ao \texttt{avaliacaoStrict}. Ela recebe um \texttt{valorE} e retorna outro \texttt{valorE}. O objetivo dessa fun\c c\~ao \'e reduzir o \texttt{Eclosure} a um \texttt{VInt} ou retornar apenas um \texttt{FClosure}.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{avaliacaoStrict}\mathbin{::}\Conid{ValorE}\to \Conid{ValorE}{}\<[E]%
+\\
+\>[B]{}\Varid{avaliacaoStrict}\;(\Conid{EClosure}\;\Varid{e}\;\Varid{env})\mathrel{=}\Varid{avaliacaoStrict}\;(\Varid{avaliar}\;\Varid{e}\;\Varid{env}){}\<[E]%
+\\
+\>[B]{}\Varid{avaliacaoStrict}\;\Varid{e}\mathrel{=}\Varid{e}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Outra fun\c c\~ao utilizada na fun\c c\~ao de avali\c c\~ao \'e a fun\c c\~ao pesquisar. Essa fun\c c\~ao \'e usada na avalica\c c\~ao de uma refer\^encia e ela recebe um \texttt{Id} e um ambiente e retorna um \texttt{valorE}. Ela procura o \texttt{Id} dentro do ambeiente e retorna a \texttt{avaliacaoStrict} da expressao referente a esse \texttt{Id}.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{pesquisar}\mathbin{::}\Conid{Id}\to \Conid{Env}\to \Conid{ValorE}{}\<[E]%
+\\
+\>[B]{}\Varid{pesquisar}\;\Varid{v}\;[\mskip1.5mu \mskip1.5mu]\mathrel{=}\Varid{error}\;\text{\tt \char34 Variavel~nao~declarada.\char34}{}\<[E]%
+\\
+\>[B]{}\Varid{pesquisar}\;\Varid{v}\;((\Varid{i},\Varid{e})\mathbin{:}\Varid{xs}){}\<[E]%
+\\
+\>[B]{}\mid \Varid{v}\equiv \Varid{i}\mathrel{=}\Varid{avaliacaoStrict}\;(\Varid{e}){}\<[E]%
+\\
+\>[B]{}\mid \Varid{otherwise}\mathrel{=}\Varid{pesquisar}\;\Varid{v}\;\Varid{xs}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+A fun\c c\~ao \texttt{lookupApp} \'e utilizada na avali\c c\~ao de uma express\~ao recursiva e ela \'e respons\'avel pela atualiza\c c\~ao do ambiente no decorrer da avalica\c c\~ao da recurss\~ao. Caso seja passado um ambiente vazio, a fun\c c\~ao ir\'a retornar uma lista com o idenditifcador e o valor passados como par\^ametro. Caso o identificador seja igual ao \texttt{Id} da cabe\c ca do ambiente, a fun\c c\~ao vai retornar uma lista vazia.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{lookupApp}\mathbin{::}\Conid{Id}\to \Conid{ValorE}\to \Conid{Env}\to \Conid{Env}{}\<[E]%
+\\
+\>[B]{}\Varid{lookupApp}\;\Varid{identificador}\;\Varid{valor}\;[\mskip1.5mu \mskip1.5mu]\mathrel{=}[\mskip1.5mu (\Varid{identificador},\Varid{valor})\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\Varid{lookupApp}\;\Varid{identificador}\;\Varid{valor}\;((\Varid{i},\Varid{e})\mathbin{:}\Varid{xs}){}\<[E]%
+\\
+\>[B]{}\mid \Varid{identificador}\equiv \Varid{i}\mathrel{=}[\mskip1.5mu \mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\mid \Varid{otherwise}\mathrel{=}\Varid{lookupApp}\;\Varid{identificador}\;\Varid{valor}\;\Varid{xs}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+A \'ultima fun\c c\~ao utilizada \'e a fun\c c\~ao de avalia\c c\~ao de uma express\~ao bin\'aria, que avalia cada lado da express\~ao levando em considera\c c\~ao seus operadores.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{14}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{avaliarExpBin}\mathbin{::}\Conid{Expressao}\to \Conid{Expressao}\to (\Conid{Int}\to \Conid{Int}\to \Conid{Int})\to \Conid{Env}\to \Conid{ValorE}{}\<[E]%
+\\
+\>[B]{}\Varid{avaliarExpBin}\;\Varid{e}\;\Varid{d}\;\Varid{op}\;\Varid{env}\mathrel{=}\Conid{VInt}\;(\Varid{op}\;\Varid{ve}\;\Varid{vd}){}\<[E]%
+\\
+\>[B]{}\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}(\Conid{VInt}\;\Varid{ve}){}\<[14]%
+\>[14]{}\mathrel{=}\Varid{avaliacaoStrict}\;(\Varid{avaliar}\;\Varid{e}\;\Varid{env}){}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}(\Conid{VInt}\;\Varid{vd})\mathrel{=}\Varid{avaliacaoStrict}\;(\Varid{avaliar}\;\Varid{d}\;\Varid{env}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+
+\section{Conclusao}
+
+O presente trabalho consistiu no desenvolvimento de uma linguagem m\'inima no intuito de abordar conceitos como Lazy evaluation (sharing) e express\~oes recursivas. Foi mostrado que a linguagem tamb\'em dava suporte para fun\c c\~oes lambdas, expressoes \texttt{Let} e \texttt{IF0}.
+
+\end{document}

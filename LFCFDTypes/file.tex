@@ -1,0 +1,478 @@
+\documentclass[12pt]{article}
+
+%% ODER: format ==         = "\mathrel{==}"
+%% ODER: format /=         = "\neq "
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+
+
+\newcommand{\Conid}[1]{\mathit{#1}}
+\newcommand{\Varid}[1]{\mathit{#1}}
+\newcommand{\anonymous}{\kern0.06em \vbox{\hrule\@width.5em}}
+\newcommand{\plus}{\mathbin{+\!\!\!+}}
+\newcommand{\bind}{\mathbin{>\!\!\!>\mkern-6.7mu=}}
+\newcommand{\rbind}{\mathbin{=\mkern-6.7mu<\!\!\!<}}% suggested by Neil Mitchell
+\newcommand{\sequ}{\mathbin{>\!\!\!>}}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\usepackage{polytable}
+
+%mathindent has to be defined
+\@ifundefined{mathindent}%
+  {\newdimen\mathindent\mathindent\leftmargini}%
+  {}%
+
+\def\resethooks{%
+  \global\let\SaveRestoreHook\empty
+  \global\let\ColumnHook\empty}
+\newcommand*{\savecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\savecolumns[#1]}}
+\newcommand*{\restorecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\restorecolumns[#1]}}
+\newcommand*{\aligncolumn}[2]%
+  {\g@addto@macro\ColumnHook{\column{#1}{#2}}}
+
+\resethooks
+
+\newcommand{\onelinecommentchars}{\quad-{}- }
+\newcommand{\commentbeginchars}{\enskip\{-}
+\newcommand{\commentendchars}{-\}\enskip}
+
+\newcommand{\visiblecomments}{%
+  \let\onelinecomment=\onelinecommentchars
+  \let\commentbegin=\commentbeginchars
+  \let\commentend=\commentendchars}
+
+\newcommand{\invisiblecomments}{%
+  \let\onelinecomment=\empty
+  \let\commentbegin=\empty
+  \let\commentend=\empty}
+
+\visiblecomments
+
+\newlength{\blanklineskip}
+\setlength{\blanklineskip}{0.66084ex}
+
+\newcommand{\hsindent}[1]{\quad}% default is fixed indentation
+\let\hspre\empty
+\let\hspost\empty
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+%
+%
+%
+%
+%
+% This package provides two environments suitable to take the place
+% of hscode, called "plainhscode" and "arrayhscode". 
+%
+% The plain environment surrounds each code block by vertical space,
+% and it uses \abovedisplayskip and \belowdisplayskip to get spacing
+% similar to formulas. Note that if these dimensions are changed,
+% the spacing around displayed math formulas changes as well.
+% All code is indented using \leftskip.
+%
+% Changed 19.08.2004 to reflect changes in colorcode. Should work with
+% CodeGroup.sty.
+%
+\ReadOnlyOnce{polycode.fmt}%
+\makeatletter
+
+\newcommand{\hsnewpar}[1]%
+  {{\parskip=0pt\parindent=0pt\par\vskip #1\noindent}}
+
+% can be used, for instance, to redefine the code size, by setting the
+% command to \small or something alike
+\newcommand{\hscodestyle}{}
+
+% The command \sethscode can be used to switch the code formatting
+% behaviour by mapping the hscode environment in the subst directive
+% to a new LaTeX environment.
+
+\newcommand{\sethscode}[1]%
+  {\expandafter\let\expandafter\hscode\csname #1\endcsname
+   \expandafter\let\expandafter\endhscode\csname end#1\endcsname}
+
+% "compatibility" mode restores the non-polycode.fmt layout.
+
+\newenvironment{compathscode}%
+  {\par\noindent
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed\)%
+   \par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\compaths}{\sethscode{compathscode}}
+
+% "plain" mode is the proposed default.
+% It should now work with \centering.
+% This required some changes. The old version
+% is still available for reference as oldplainhscode.
+
+\newenvironment{plainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newenvironment{oldplainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+% Here, we make plainhscode the default environment.
+
+\newcommand{\plainhs}{\sethscode{plainhscode}}
+\newcommand{\oldplainhs}{\sethscode{oldplainhscode}}
+\plainhs
+
+% The arrayhscode is like plain, but makes use of polytable's
+% parray environment which disallows page breaks in code blocks.
+
+\newenvironment{arrayhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\parray}%
+  {\endparray\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newcommand{\arrayhs}{\sethscode{arrayhscode}}
+
+% The mathhscode environment also makes use of polytable's parray 
+% environment. It is supposed to be used only inside math mode 
+% (I used it to typeset the type rules in my thesis).
+
+\newenvironment{mathhscode}%
+  {\parray}{\endparray}
+
+\newcommand{\mathhs}{\sethscode{mathhscode}}
+
+% texths is similar to mathhs, but works in text mode.
+
+\newenvironment{texthscode}%
+  {\(\parray}{\endparray\)}
+
+\newcommand{\texths}{\sethscode{texthscode}}
+
+% The framed environment places code in a framed box.
+
+\def\codeframewidth{\arrayrulewidth}
+\RequirePackage{calc}
+
+\newenvironment{framedhscode}%
+  {\parskip=\abovedisplayskip\par\noindent
+   \hscodestyle
+   \arrayrulewidth=\codeframewidth
+   \tabular{@{}|p{\linewidth-2\arraycolsep-2\arrayrulewidth-2pt}|@{}}%
+   \hline\framedhslinecorrect\\{-1.5ex}%
+   \let\endoflinesave=\\
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \framedhslinecorrect\endoflinesave{.5ex}\hline
+   \endtabular
+   \parskip=\belowdisplayskip\par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\framedhslinecorrect}[2]%
+  {#1[#2]}
+
+\newcommand{\framedhs}{\sethscode{framedhscode}}
+
+% The inlinehscode environment is an experimental environment
+% that can be used to typeset displayed code inline.
+
+\newenvironment{inlinehscode}%
+  {\(\def\column##1##2{}%
+   \let\>\undefined\let\<\undefined\let\\\undefined
+   \newcommand\>[1][]{}\newcommand\<[1][]{}\newcommand\\[1][]{}%
+   \def\fromto##1##2##3{##3}%
+   \def\nextline{}}{\) }%
+
+\newcommand{\inlinehs}{\sethscode{inlinehscode}}
+
+% The joincode environment is a separate environment that
+% can be used to surround and thereby connect multiple code
+% blocks.
+
+\newenvironment{joincode}%
+  {\let\orighscode=\hscode
+   \let\origendhscode=\endhscode
+   \def\endhscode{\def\hscode{\endgroup\def\@currenvir{hscode}\\}\begingroup}
+   %\let\SaveRestoreHook=\empty
+   %\let\ColumnHook=\empty
+   %\let\resethooks=\empty
+   \orighscode\def\hscode{\endgroup\def\@currenvir{hscode}}}%
+  {\origendhscode
+   \global\let\hscode=\orighscode
+   \global\let\endhscode=\origendhscode}%
+
+\makeatother
+\EndFmtInput
+%
+
+\usepackage{busproofs}
+\usepackage[brazil]{babel}
+
+\title{Implementa\c c\~{a}o de Verifica\c c\~{a}o de Tipos em Haskell}
+
+\author{Rodrigo Bonif\'{a}cio}
+
+\begin{document}
+
+\maketitle
+
+\section{Introdu\c c\~{a}o}
+
+Esse documento apresenta uma implementa\c c\~{a}o,
+em \emph{literate Haskell}, do mecanismo de verifica\c c\~{a}o
+de tipos de uma linguagem de programa\c c\~{a}o funcional
+minimalista. Os alunos da disciplina Linguagens de Programa\c c\~{a}o
+devem extender essa implementa\c c\~{a}o de tal forma que
+todos os elementos sint\'{a}ticos possuam a verifica\c c\~{a}o
+de tipos implementada.
+
+\section{Vis\~{a}o geral da linguagem}
+
+
+A linguagem LFCF suporta tanto express\~{o}es
+identificadas (LET) quanto identificadores e fun\c c\~{o}es de alta ordem
+(com o mecanismo de expressoes lambda). O foco \'{e} na
+verifica\c c\~{a}o de tipos, ent\~{a}o n\~{a}o est\~{a}o
+implementadas fun\c c\~{o}es voltadas para a avalia\c c\~{a}o
+das express\~{o}es. 
+
+\section{Defini\c c\~{a}o da \'{A}rvore Sint\'{a}tica Abstrata}
+
+A implementa\c c\~{a}o consiste na defini\c c\~{a}o de
+um m\'{o}dulo Haskell mais alguns tipos auxiliares, como
+\texttt{Id} (um tipo sin\^{o}nimo para uma \texttt{string}) e
+\texttt{Gamma}, que corresponde a um mapeamento de
+identificadores em tipos. 
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{module}\;\Conid{LFCFDTypes}\;\mathbf{where}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{type}\;\Conid{Id}\mathrel{=}\Conid{String}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{type}\;\Conid{Gamma}\mathrel{=}[\mskip1.5mu (\Conid{Id},\Conid{Tipo})\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Os tipos v\'{a}lidos s\~{a}o definidos com o
+tipo alg\'{e}brico \texttt{Tipo}, que pode
+ser um tipo inteiro, um tipo booleano
+e um tipo fun\c c\~{a}o. O tipo fun\c c\~{a}o
+deve expressar tanto o tipo do argumento quanto
+o tipo do retorno. As express\~{o}es, conforme
+mencionado anteriormente, envolvem tanto
+valores inteiros quanto booleanos, bem
+como express\~{o}es bin\'{a}rias (soma,
+subtra\c c\~{a}o, etc.), express\~{o}es
+\texttt{let}, \texttt{lambda}, aplica\c c\~{a}o
+de fun\c c\~{o}es e \texttt{if-then-else} 
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;\Conid{Tipo}\mathrel{=}\Conid{TInt}\mid \Conid{TBool}\mid \Conid{TFuncao}\;\Conid{Tipo}\;\Conid{Tipo}{}\<[E]%
+\\
+\>[B]{}\mathbf{deriving}\;(\Conid{Show},\Conid{Eq}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{data}\;\Conid{Expressao}\mathrel{=}\Conid{ValorI}\;\Conid{Int}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{ValorB}\;\Conid{Bool}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Soma}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Subtracao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Multiplicacao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Divisao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Let}\;\Conid{Id}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Ref}\;\Conid{Id}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Lambda}\;(\Conid{Id},\Conid{Tipo})\;\Conid{Tipo}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Aplicacao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{If}\;\Conid{Expressao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\mathbf{deriving}\;(\Conid{Show},\Conid{Eq}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+A fun\c c\~{a}o que realiza a verifica\c c\~{a}o
+de tipos recebe uma express\~{a}o, um ambiente
+\texttt{Gamma} e possivelmente retorna um tipo
+v\'{a}lido (por isso o retorno \texttt{Maybe Tipo}).
+Caso algum erro ocorra no sistema de tipos,
+essa fun\c c\~{a}o deve retornar \texttt{Nothing}.
+Isso permite o uso de uma nota\c c\~{a}o
+baseada em monadas. 
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\mathbin{::}\Conid{Expressao}\to \Conid{Gamma}\to \Conid{Maybe}\;\Conid{Tipo}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Para alguns casos, a verifica\c c\~{a}o de tipos
+\'{e} bem trivial, particularmente a verifica\c c\~{a}o
+de tipos de express\~{o}es envolvendo valores inteiros,
+valores booleanos e express\~{o}es \texttt{lambda} 
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{31}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{ValorI}\;\Varid{n})\;\anonymous {}\<[31]%
+\>[31]{}\mathrel{=}\Varid{return}\;\Conid{TInt}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{ValorB}\;\Varid{b})\;\anonymous {}\<[31]%
+\>[31]{}\mathrel{=}\Varid{return}\;\Conid{TBool}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{Lambda}\;(\Varid{v},\Varid{t1})\;\Varid{t2}\;\Varid{exp})\;\Varid{g}\mathrel{=}\Varid{return}\;(\Conid{TFuncao}\;\Varid{t1}\;\Varid{t2}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Para outros casos, a verifica\c c\~{a}o de tipos
+requer um certo grau de indu\c c\~{a}o (seguindo as
+regras de deriva\c c\~{a}o vistas em sala de aula). Para
+a soma, temos a seguinte regra de deriva\c c\~{a}o: 
+
+\begin{prooftree}
+\AxiomC{$\Gamma\vdash lhs : TInt$}
+\AxiomC{$\Gamma\vdash rhs : TInt$}
+\BinaryInfC{$\Gamma\vdash soma(lhs, rhs) : TInt$}
+\end{prooftree}
+
+\noindent que pode ser traduzida para Haskell como:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{34E}{@{}l@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{Soma}\;\Varid{l}\;\Varid{r})\;\Varid{gamma}{}\<[34]%
+\>[34]{}\mathrel{=}{}\<[34E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{verificarTipos}\;\Varid{l}\;\Varid{gamma}\bind \lambda \Varid{lt}\to {}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{verificarTipos}\;\Varid{r}\;\Varid{gamma}\bind \lambda \Varid{rt}\to {}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathbf{if}\;\Varid{lt}\equiv \Conid{TInt}\mathrel{\wedge}\Varid{rt}\equiv \Conid{TInt}\;\mathbf{then}\;\Varid{return}\;\Conid{TInt}\;\mathbf{else}\;\Conid{Nothing}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Similarmente, a verifica\c c\~{a}o de express\~{o}es do tipo
+\texttt{let} requer um grau de indu\c c\~{a}o. Supondo
+uma express\~{a}o \texttt{let v = e in c}, primeiro verificamos
+o tipo da express\~{a}o nomeda (\texttt{e}) \'{e} bem tipada com
+tipo \texttt{t},
+adicionamos uma associa\c c\~{a}o \texttt{(v, t)} no
+ambiente \texttt{Gamma} original e computamos o tipo de
+\texttt{c} no novo ambiente. Em termos de regras de deriva\c c\~{a}o,
+ter\'{a}mos:
+
+\begin{prooftree}
+\AxiomC{$\Gamma\vdash e : \tau_1$}
+\AxiomC{$(x,\tau_1)\Gamma\vdash c : \tau_2$}
+\BinaryInfC{$\Gamma\vdash let(v,e,c) : \tau_2$}
+\end{prooftree}
+
+\noindent Em Haskell:
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{Let}\;\Varid{v}\;\Varid{e}\;\Varid{c})\;\Varid{gamma}\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{verificarTipos}\;\Varid{e}\;\Varid{gamma}\bind \lambda \Varid{t}\to {}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{verificarTipos}\;\Varid{c}\;((\Varid{v},\Varid{t})\mathbin{:}\Varid{gamma}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+\section{Trabalho} 
+
+Essa atividade do projeto final envolve verificar os tipos das demais expressoes
+e escrever casos de teste para verificar se esta tudo ok. Para simplificar,
+escolha a estrategia de escopo (dinamico ou estatico).
+
+
+
+\end{document}
