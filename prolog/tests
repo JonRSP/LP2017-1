@@ -1,0 +1,12 @@
+verificarTipos(_, aplicacao(lambda((X, vInt), vInt, var(X)), valor_inteiro(3)), Res).
+verificarTipos(_, lambda((X, vInt), vInt, var(X)), Res).
+verificarTipos(_, let(X, valor_inteiro(3), var(X)), Res).
+verificarTipos(_, soma(valor_inteiro(3), valor_booleano(True)), Res).
+verificarTipos(_, soma(valor_inteiro(3), valor_inteiro(3)), Res).
+
+verificarTipos(_, let(X, valor_inteiro(3), soma(var(X), valor_booleano(True))), Res).
+
+verificarTipos(_, lambda((X, vInt), vInt, soma(var(X), valor_booleano(True))), Res).
+
+
+verificarTipos(_, aplicacao(lambda((X, vInt), vInt, soma(var(X), valor_booleano(True)), valor_inteiro(3))), Res).
